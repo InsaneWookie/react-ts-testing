@@ -4,8 +4,9 @@ import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 import { Provider } from 'react-redux'
-import ReduxThunk, { ThunkDispatch, ThunkAction } from 'redux-thunk';
-
+// import ReduxThunk, { ThunkDispatch, ThunkAction } from 'redux-thunk';
+import createSagaMiddleware from 'redux-saga'
+import {takeEvery, put} from 'redux-saga/effects'
 // import { createStore } from "redux";
 
 import {
@@ -15,7 +16,7 @@ import {
   createReducer,
   PayloadAction,
   applyMiddleware,
-  Action, createAsyncThunk
+  Action, createAsyncThunk, getDefaultMiddleware, ActionCreatorWithPayload, ActionCreatorWithOptionalPayload
 } from '@reduxjs/toolkit'
 
 
@@ -29,6 +30,9 @@ export const inc = createAction('INCREMENT');
 export const dec = createAction('DECREMENT');
 export const setCount = createAction<SetCountValue>('SET_COUNT');
 export const asyncRequest = createAction<IUser>('ASYNC_REQUEST');
+export const getUser = createAction<number>('GET_USER');
+export const updateUser = createAction<IUser>('UPDATE_USER');
+
 
 export interface IUser {
   data: {
@@ -43,7 +47,7 @@ const fetchUser = async (id :number) => {
   return data;
 };
 
-export const fetchUserAction = createAsyncThunk(  'testing',  fetchUser);
+export const fetchUserActionThunk = createAsyncThunk(  'testing',  fetchUser);
 
 
 
@@ -56,7 +60,7 @@ const counterReducer = createReducer(0, builder => {
     .addCase(setCount, (state, action) => {
       return action.payload.value * action.payload.multiplier
     })
-    .addCase(fetchUserAction.fulfilled, (state, action) => {
+    .addCase(updateUser, (state, action) => {
       return action.payload.data.id
     })
     .addCase(asyncRequest, (state, action) => {
@@ -67,7 +71,39 @@ const counterReducer = createReducer(0, builder => {
 const rootReducer = combineReducers({counter: counterReducer});
 export type RootState = ReturnType<typeof rootReducer>
 
-const store = configureStore({reducer: rootReducer});
+// const store = configureStore({reducer: rootReducer});
+
+
+
+let sagaMiddleware = createSagaMiddleware();
+const middleware = [...getDefaultMiddleware({ thunk: false }), sagaMiddleware];
+
+const store = configureStore({
+  reducer: rootReducer,
+  middleware: middleware
+});
+
+
+export function* fetchDataSaga({payload: userId} : PayloadAction<number>) {
+  try {
+// debugger;
+    console.log("fetchDataSaga");
+    // const id = 3;
+    // const res = yield fetch(`https://reqres.in/api/users/${payload}?delay=1`);
+    // const data = yield (res.json()) as IUser;
+    const data = yield fetchUser(userId);
+    console.log(updateUser(data));
+    yield put(updateUser(data)) //calls the store action
+  } catch (e) {
+    yield put({ type: "TODO_FETCH_FAILED" });
+  }
+}
+
+const saga = function* rootSaga() {
+  yield takeEvery(getUser, fetchDataSaga);
+}
+
+sagaMiddleware.run(saga);
 
 ReactDOM.render(
   <React.StrictMode>

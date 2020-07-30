@@ -3,7 +3,7 @@ import logo from './logo.svg';
 import './App.css';
 
 import { useSelector, useDispatch } from "react-redux";
-import { asyncRequest, dec, inc, IUser, RootState, setCount, fetchUserAction } from "./index";
+import { asyncRequest, dec, inc, IUser, RootState, setCount, fetchUserActionThunk, getUser } from "./index";
 import {Counter} from "./Counter"
 
 
@@ -11,6 +11,8 @@ function App() {
 
   const counter = useSelector((state: RootState) => state.counter);
   const dispatch = useDispatch();
+
+  const fetchUserAction2 = fetchUserActionThunk;
 
   return (
     <div className="App">
@@ -34,8 +36,10 @@ function App() {
 
         <button onClick={
           () => {
-            console.log(fetchUserAction.fulfilled({data: {id: 3}}, 'test', 3));
-            dispatch(fetchUserAction(6))
+
+            // console.log(fetchUserAction2.fulfilled({data: {id: 3}}, 'test', 3));
+            console.log(getUser(3));
+            dispatch(getUser(4))
           }
         }>Async
         </button>
